@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Arts Labs - Advanced Expansion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #e2e8f0;
+            overflow: hidden;
+        }
+
+        canvas {
+            touch-action: none; /* 防止手機滑動頁面 */
+        }
+
+        /* 自定義滾動條 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b; 
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* 霓虹光暈效果 */
+        .neon-text {
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+        
+        .panel-glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #38bdf8;
+            margin-top: -6px;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: #475569;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="flex h-screen w-screen">
+
+    <!-- 左側選單 Sidebar -->
+    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl z-10">
+        <div class="p-6 border-b border-slate-800">
+            <h1 class="text-2xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 neon-text">
+                VISUAL LABS
+            </h1>
+            <p class="text-xs text-slate-500 mt-1 font-mono">EXPANSION PACK v2.0</p>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto p-4 space-y-2">
+            <!-- 物理類 -->
+            <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 mt-2 px-2">Physics</div>
+            <button onclick="switchLab('verlet')" class="lab-btn w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 transition-all duration-200 border border-transparent hover:border-cyan-900 group active-lab" id="btn-verlet">
+                <div class="flex items-center">
+                    <span class="text-xl mr-3 group-hover:scale-110 transition-transform">⛓️</span>
+                    <div>
+                        <div class="font-semibold text-slate-200">Verlet Chain</div>
+                        <div class="text-xs text-slate-500">Soft Body Physics</div>
+                    </div>
+                </div>
+            </button>
+
+            <!-- 生物/化學類 -->
+            <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 mt-4 px-2">Biology</div>
+            <button onclick="switchLab('reaction')" class="lab-btn w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 transition-all duration-200 border border-transparent hover:border-purple-900 group" id="btn-reaction">
+                <div class="flex items-center">
+                    <span class="text-xl mr-3 group-hover:scale-110 transition-transform">🦠</span>
+                    <div>
+                        <div class="font-semibold text-slate-200">Reaction Diffusion</div>
+                        <div class="text-xs text-slate-500">Gray-Scott Model</div>
+                    </div>
+                </div>
+            </button>
+
+            <!-- 光學類 -->
+            <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 mt-4 px-2">Optics</div>
+            <button onclick="switchLab('raycasting')" class="lab-btn w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 transition-all duration-200 border border-transparent hover:border-yellow-900 group" id="btn-raycasting">
+                <div class="flex items-center">
+                    <span class="text-xl mr-3 group-hover:scale-110 transition-transform">🔦</span>
+                    <div>
+                        <div class="font-semibold text-slate-200">2D Raycasting</div>
+                        <div class="text-xs text-slate-500">Dynamic Shadows</div>
+                    </div>
+                </div>
+            </button>
+
+            <!-- 幾何類 -->
+            <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 mt-4 px-2">Geometry</div>
+            <button onclick="switchLab('spiro')" class="lab-btn w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 transition-all duration-200 border border-transparent hover:border-pink-900 group" id="btn-spiro">
+                <div class="flex items-center">
+                    <span class="text-xl mr-3 group-hover:scale-110 transition-transform">💮</span>
+                    <div>
+                        <div class="font-semibold text-slate-200">Spirograph</div>
+                        <div class="text-xs text-slate-500">Hypotrochoids</div>
+                    </div>
+                </div>
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800 text-xs text-slate-600 text-center">
+            Designed for Advanced Canvas
+        </div>
+    </aside>
+
+    <!-- 主畫面 Main Area -->
+    <main class="flex-1 relative bg-black flex flex-col">
+        <!-- Canvas Container -->
+        <div id="canvas-container" class="flex-1 relative overflow-hidden flex justify-center items-center bg-slate-950">
+            <canvas id="mainCanvas"></canvas>
+            
+            <!-- 浮動提示 Overlay -->
+            <div id="instruction-overlay" class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/50 px-4 py-2 rounded-full text-xs text-white/70 backdrop-blur-sm border border-white/10 pointer-events-none transition-opacity duration-500">
+                拖曳滑鼠與畫面互動 / Drag mouse to interact
+            </div>
+        </div>
+
+        <!-- 底部控制面板 Control Panel -->
+        <div class="h-auto min-h-[140px] bg-slate-900 border-t border-slate-800 p-6 shadow-2xl z-20">
+            <div class="max-w-5xl mx-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="control-title" class="text-lg font-bold text-white flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                        Controls
+                    </h2>
+                    <button id="reset-btn" class="text-xs bg-slate-800 hover:bg-slate-700 text-white px-3 py-1 rounded transition-colors border border-slate-700">
+                        Reset Parameters
+                    </button>
+                </div>
+                
+                <!-- 動態生成的滑塊區域 -->
+                <div id="controls-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Javascript will inject controls here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- 核心系統 Core System ---
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d', { alpha: false }); // 優化性能
+        let width, height;
+        let animationId;
+        let currentLab = null;
+        let mouse = { x: 0, y: 0, isDown: false };
+
+        // --- 調整畫布大小 ---
+        function resize() {
+            const container = document.getElementById('canvas-container');
+            width = canvas.width = container.clientWidth;
+            height = canvas.height = container.clientHeight;
+            if (currentLab) currentLab.resize(width, height);
+        }
+        window.addEventListener('resize', resize);
+
+        // --- 滑鼠事件 ---
+        canvas.addEventListener('mousemove', e => {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left;
+            mouse.y = e.clientY - rect.top;
+        });
+        canvas.addEventListener('mousedown', () => mouse.isDown = true);
+        canvas.addEventListener('mouseup', () => mouse.isDown = false);
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = e.touches[0].clientX - rect.left;
+            mouse.y = e.touches[0].clientY - rect.top;
+        }, { passive: false });
+        canvas.addEventListener('touchstart', () => mouse.isDown = true);
+        canvas.addEventListener('touchend', () => mouse.isDown = false);
+
+        // --- 實驗室基礎類別 (Base Class) ---
+        class Lab {
+            constructor() {
+                this.params = {};
+            }
+            init() {}
+            update() {}
+            draw() {}
+            resize(w, h) {}
+            getControls() { return []; } // 返回控制項配置
+            reset() {}
+        }
+
+        // ==========================================
+        // LAB 1: Verlet Chain (Physics)
+        // ==========================================
+        class VerletLab extends Lab {
+            constructor() {
+                super();
+                this.points = [];
+                this.sticks = [];
+                this.bounce = 0.9;
+                this.gravity = 0.5;
+                this.friction = 0.999;
+                this.stiffness = 5; // 迭代次數
+                this.params = {
+                    gravity: { val: 0.5, min: 0, max: 2, step: 0.1, name: "Gravity (重力)" },
+                    friction: { val: 0.99, min: 0.90, max: 1.0, step: 0.001, name: "Friction (摩擦)" },
+                    stiffness: { val: 4, min: 1, max: 10, step: 1, name: "Stiffness (硬度/迭代)" },
+                    gap: { val: 30, min: 10, max: 60, step: 5, name: "Link Length (鏈長)" }
+                };
+                this.draggedPoint = null;
+            }
+
+            init() {
+                this.points = [];
+                this.sticks = [];
+                // 創建一條簡單的鎖鏈
+                let startX = width / 2;
+                let startY = 50;
+                let gap = this.params.gap.val;
+                
+                for(let i = 0; i < 15; i++) {
+                    this.points.push({
+                        x: startX, y: startY + i * gap,
+                        oldx: startX + (Math.random()*5), oldy: startY + i * gap, // 添加一點初始速度
+                        pinned: i === 0 
+                    });
+                    if (i > 0) {
+                        this.sticks.push({ p0: this.points[i-1], p1: this.points[i], length: gap });
+                    }
+                }
+            }
+
+            update() {
+                // 更新參數
+                this.gravity = parseFloat(this.params.gravity.val);
+                this.friction = parseFloat(this.params.friction.val);
+                let iter = parseInt(this.params.stiffness.val);
+
+                // 更新點
+                for(let p of this.points) {
+                    if(!p.pinned) {
+                        let vx = (p.x - p.oldx) * this.friction;
+                        let vy = (p.y - p.oldy) * this.friction;
+                        p.oldx = p.x;
+                        p.oldy = p.y;
+                        p.x += vx;
+                        p.y += vy;
+                        p.y += this.gravity;
+                    }
+                }
+
+                // 滑鼠互動 (拖曳)
+                if (mouse.isDown) {
+                    let nearest = null;
+                    let dist = 100; // 感應半徑
+                    for(let p of this.points) {
+                        let dx = p.x - mouse.x;
+                        let dy = p.y - mouse.y;
+                        let d = Math.sqrt(dx*dx + dy*dy);
+                        if(d < dist) {
+                            dist = d;
+                            nearest = p;
+                        }
+                    }
+                    if(nearest) {
+                        nearest.x = mouse.x;
+                        nearest.y = mouse.y;
+                        // 稍微重置速度以防止發射
+                        nearest.oldx = mouse.x - (mouse.x - nearest.oldx)*0.1;
+                        nearest.oldy = mouse.y - (mouse.y - nearest.oldy)*0.1;
+                    }
+                }
+
+                // 約束條件 (Constraint Relaxation)
+                for(let i=0; i<iter; i++) {
+                    // 邊界約束
+                    for(let p of this.points) {
+                        if (p.pinned) continue;
+                        if(p.y > height) { p.y = height; p.oldy = p.y + (p.y - p.oldy)*this.bounce; }
+                        if(p.x > width) { p.x = width; p.oldx = p.x + (p.x - p.oldx)*this.bounce; }
+                        if(p.x < 0) { p.x = 0; p.oldx = p.x + (p.x - p.oldx)*this.bounce; }
+                    }
+
+                    // 棍子約束
+                    for(let s of this.sticks) {
+                        let dx = s.p1.x - s.p0.x;
+                        let dy = s.p1.y - s.p0.y;
+                        let distance = Math.sqrt(dx * dx + dy * dy);
+                        let difference = s.length - distance;
+                        let percent = difference / distance / 2;
+                        let offsetX = dx * percent;
+                        let offsetY = dy * percent;
+
+                        if(!s.p0.pinned) {
+                            s.p0.x -= offsetX;
+                            s.p0.y -= offsetY;
+                        }
+                        if(!s.p1.pinned) {
+                            s.p1.x += offsetX;
+                            s.p1.y += offsetY;
+                        }
+                    }
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(0, 0, width, height);
+
+                // 畫棍子
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                for(let s of this.sticks) {
+                    ctx.moveTo(s.p0.x, s.p0.y);
+                    ctx.lineTo(s.p1.x, s.p1.y);
+                }
+                ctx.stroke();
+
+                // 畫點
+                ctx.fillStyle = '#fff';
+                for(let p of this.points) {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.pinned ? 8 : 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            getControls() { return this.params; }
+            reset() { this.init(); }
+            resize(w, h) { this.init(); }
+        }
+
+        // ==========================================
+        // LAB 2: Reaction Diffusion (Gray-Scott)
+        // ==========================================
+        class ReactionLab extends Lab {
+            constructor() {
+                super();
+                // 使用較小的網格以提升JS性能，繪製時放大
+                this.gridW = 100;
+                this.gridH = 100;
+                this.scale = 4; 
+                this.grid = [];
+                this.next = [];
+                
+                // 擴散率
+                this.dA = 1.0;
+                this.dB = 0.5;
+                
+                this.params = {
+                    feed: { val: 0.055, min: 0.01, max: 0.1, step: 0.001, name: "Feed Rate (飼料)" },
+                    kill: { val: 0.062, min: 0.01, max: 0.1, step: 0.001, name: "Kill Rate (死亡)" },
+                    speed: { val: 5, min: 1, max: 20, step: 1, name: "Sim Speed (運算速度)" }
+                };
+            }
+
+            init() {
+                // 重設網格大小以適應螢幕比例，但保持低解析度
+                this.gridW = Math.floor(width / this.scale);
+                this.gridH = Math.floor(height / this.scale);
+                
+                this.grid = [];
+                this.next = [];
+                
+                for (let x = 0; x < this.gridW; x++) {
+                    this.grid[x] = [];
+                    this.next[x] = [];
+                    for (let y = 0; y < this.gridH; y++) {
+                        this.grid[x][y] = { a: 1, b: 0 };
+                        this.next[x][y] = { a: 1, b: 0 };
+                    }
+                }
+
+                // 在中間加一點 B 化學物質
+                this.seed(Math.floor(this.gridW/2), Math.floor(this.gridH/2), 5);
+                // 隨機幾個點
+                for(let i=0; i<10; i++) {
+                    this.seed(Math.floor(Math.random()*this.gridW), Math.floor(Math.random()*this.gridH), 3);
+                }
+            }
+            
+            seed(x, y, r) {
+                for (let i = -r; i <= r; i++) {
+                    for (let j = -r; j <= r; j++) {
+                        let col = (x + i + this.gridW) % this.gridW;
+                        let row = (y + j + this.gridH) % this.gridH;
+                        this.grid[col][row].b = 1;
+                    }
+                }
+            }
+
+            update() {
+                let feed = parseFloat(this.params.feed.val);
+                let kill = parseFloat(this.params.kill.val);
+                let iterations = parseInt(this.params.speed.val);
+
+                // 點擊添加化學物質
+                if(mouse.isDown) {
+                    let mx = Math.floor(mouse.x / this.scale);
+                    let my = Math.floor(mouse.y / this.scale);
+                    this.seed(mx, my, 4);
+                }
+
+                for (let k = 0; k < iterations; k++) {
+                    for (let x = 0; x < this.gridW; x++) {
+                        for (let y = 0; y < this.gridH; y++) {
+                            let a = this.grid[x][y].a;
+                            let b = this.grid[x][y].b;
+
+                            let laplaceA = 0;
+                            let laplaceB = 0;
+
+                            // 簡單的 3x3 卷積
+                            // Center: -1, Neighbors: 0.2, Diagonals: 0.05
+                            laplaceA += a * -1;
+                            laplaceB += b * -1;
+                            
+                            // 四個鄰居
+                            const neighbors = [
+                                {dx:1, dy:0}, {dx:-1, dy:0}, {dx:0, dy:1}, {dx:0, dy:-1}
+                            ];
+                            for(let n of neighbors) {
+                                let nx = (x + n.dx + this.gridW) % this.gridW;
+                                let ny = (y + n.dy + this.gridH) % this.gridH;
+                                laplaceA += this.grid[nx][ny].a * 0.2;
+                                laplaceB += this.grid[nx][ny].b * 0.2;
+                            }
+                            
+                            // 四個對角 (可選，簡化計算暫不加或加權重更小)
+                            // 這裡為了效能僅使用 Cross 核心
+
+                            let newA = a + (this.dA * laplaceA - a * b * b + feed * (1 - a));
+                            let newB = b + (this.dB * laplaceB + a * b * b - (kill + feed) * b);
+
+                            // Clamp values
+                            newA = Math.max(0, Math.min(1, newA));
+                            newB = Math.max(0, Math.min(1, newB));
+
+                            this.next[x][y].a = newA;
+                            this.next[x][y].b = newB;
+                        }
+                    }
+                    // Swap
+                    let temp = this.grid;
+                    this.grid = this.next;
+                    this.next = temp;
+                }
+            }
+
+            draw() {
+                // 直接操作像素
+                const imgData = ctx.createImageData(width, height);
+                const data = imgData.data;
+
+                // 為了效能，我們繪製在小畫布上然後放大 (但這裡我們逐像素填充因為要平滑)
+                // 簡單版：繪製每個 grid cell 為一個矩形
+                
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, width, height);
+                
+                // 優化：直接繪製矩形，不用 pixel data，雖然慢一點但代碼更乾淨
+                for (let x = 0; x < this.gridW; x++) {
+                    for (let y = 0; y < this.gridH; y++) {
+                        let cell = this.grid[x][y];
+                        let c = Math.floor((cell.a - cell.b) * 255);
+                        c = Math.max(0, Math.min(255, c));
+                        
+                        // 配色方案：毒液綠紫色調
+                        if(c < 200) {
+                            let r = 255 - c;
+                            let g = c * 0.5;
+                            let b = c;
+                            ctx.fillStyle = `rgb(${r},${g},${b})`;
+                            ctx.fillRect(x * this.scale, y * this.scale, this.scale, this.scale);
+                        }
+                    }
+                }
+            }
+
+            resize(w, h) { this.init(); }
+            getControls() { return this.params; }
+            reset() { this.init(); }
+        }
+
+        // ==========================================
+        // LAB 3: 2D Raycasting (Optics)
+        // ==========================================
+        class RaycastLab extends Lab {
+            constructor() {
+                super();
+                this.walls = [];
+                this.rays = [];
+                this.params = {
+                    rayCount: { val: 100, min: 20, max: 720, step: 10, name: "Ray Count (光線數)" },
+                    lightR: { val: 255, min: 0, max: 255, step: 1, name: "Light Red" },
+                    lightG: { val: 255, min: 0, max: 255, step: 1, name: "Light Green" },
+                    lightB: { val: 200, min: 0, max: 255, step: 1, name: "Light Blue" },
+                };
+            }
+
+            init() {
+                this.walls = [];
+                // 邊界
+                this.walls.push({a: {x:0, y:0}, b: {x:width, y:0}});
+                this.walls.push({a: {x:width, y:0}, b: {x:width, y:height}});
+                this.walls.push({a: {x:width, y:height}, b: {x:0, y:height}});
+                this.walls.push({a: {x:0, y:height}, b: {x:0, y:0}});
+                
+                // 隨機障礙物
+                for(let i=0; i<6; i++) {
+                    let x1 = Math.random() * width;
+                    let y1 = Math.random() * height;
+                    let x2 = x1 + (Math.random() * 100 - 50);
+                    let y2 = y1 + (Math.random() * 100 - 50);
+                    this.walls.push({a: {x:x1, y:y1}, b: {x:x2, y:y2}});
+                }
+            }
+
+            update() {
+                // 滑鼠就是光源
+                // 不需更新物理，只更新光線計算
+            }
+
+            draw() {
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, width, height);
+
+                // 畫牆壁
+                ctx.strokeStyle = '#334155';
+                ctx.lineWidth = 2;
+                for(let w of this.walls) {
+                    ctx.beginPath();
+                    ctx.moveTo(w.a.x, w.a.y);
+                    ctx.lineTo(w.b.x, w.b.y);
+                    ctx.stroke();
+                }
+
+                // 投射光線
+                let rayCount = parseInt(this.params.rayCount.val);
+                let points = [];
+                
+                // 1. 產生光線角度
+                for(let i=0; i<rayCount; i++) {
+                    let angle = (i / rayCount) * Math.PI * 2;
+                    let ray = { a: mouse, b: { x: mouse.x + Math.cos(angle)*2000, y: mouse.y + Math.sin(angle)*2000 } };
+                    
+                    // 2. 尋找最近的交點
+                    let closest = null;
+                    let record = Infinity;
+
+                    for(let wall of this.walls) {
+                        const pt = this.getIntersection(ray, wall);
+                        if(pt) {
+                            const d = Math.sqrt((mouse.x - pt.x)**2 + (mouse.y - pt.y)**2);
+                            if(d < record) {
+                                record = d;
+                                closest = pt;
+                            }
+                        }
+                    }
+                    if(closest) {
+                        points.push(closest);
+                        // 畫光束
+                        // ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+                        // ctx.beginPath();
+                        // ctx.moveTo(mouse.x, mouse.y);
+                        // ctx.lineTo(closest.x, closest.y);
+                        // ctx.stroke();
+                    }
+                }
+
+                // 3. 繪製光的多邊形區域 (Light Polygon)
+                if(points.length > 0) {
+                    let r = this.params.lightR.val;
+                    let g = this.params.lightG.val;
+                    let b = this.params.lightB.val;
+                    
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.3)`;
+                    ctx.beginPath();
+                    ctx.moveTo(points[0].x, points[0].y);
+                    for(let i=1; i<points.length; i++) {
+                        ctx.lineTo(points[i].x, points[i].y);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // 添加光源中心光暈
+                    let grad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 200);
+                    grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.8)`);
+                    grad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.moveTo(points[0].x, points[0].y);
+                    for(let i=1; i<points.length; i++) {
+                        ctx.lineTo(points[i].x, points[i].y);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+
+            getIntersection(ray, wall) {
+                const x1 = wall.a.x;
+                const y1 = wall.a.y;
+                const x2 = wall.b.x;
+                const y2 = wall.b.y;
+                
+                const x3 = ray.a.x;
+                const y3 = ray.a.y;
+                const x4 = ray.b.x;
+                const y4 = ray.b.y;
+
+                const den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+                if(den == 0) return null;
+
+                const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den;
+                const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den;
+
+                if(t > 0 && t < 1 && u > 0) {
+                    return {
+                        x: x1 + t * (x2 - x1),
+                        y: y1 + t * (y2 - y1)
+                    };
+                }
+                return null;
+            }
+
+            resize(w, h) { this.init(); }
+            getControls() { return this.params; }
+            reset() { this.init(); }
+        }
+
+        // ==========================================
+        // LAB 4: Spirograph (Geometry)
+        // ==========================================
+        class SpiroLab extends Lab {
+            constructor() {
+                super();
+                this.path = [];
+                this.angle = 0;
+                this.params = {
+                    outerR: { val: 150, min: 50, max: 300, step: 1, name: "Outer Radius (外圓R)" },
+                    innerR: { val: 52, min: 1, max: 200, step: 1, name: "Inner Radius (內圓r)" },
+                    offsetD: { val: 70, min: 10, max: 200, step: 1, name: "Pen Offset (畫筆距d)" },
+                    speed: { val: 0.1, min: 0.01, max: 0.5, step: 0.01, name: "Speed (速度)" },
+                    resolution: { val: 5, min: 1, max: 20, step: 1, name: "Render Speed (渲染倍率)" }
+                };
+                this.hue = 0;
+            }
+
+            init() {
+                this.path = [];
+                this.angle = 0;
+                this.hue = 0;
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(0, 0, width, height);
+            }
+
+            update() {
+                // Spirograph 公式 (Hypotrochoid)
+                // x = (R - r) * cos(theta) + d * cos(((R - r) / r) * theta)
+                // y = (R - r) * sin(theta) - d * sin(((R - r) / r) * theta)
+
+                let R = parseFloat(this.params.outerR.val);
+                let r = parseFloat(this.params.innerR.val);
+                let d = parseFloat(this.params.offsetD.val);
+                let speed = parseFloat(this.params.speed.val);
+                let res = parseInt(this.params.resolution.val);
+
+                // 為了一次畫多點讓線條看起來連續
+                for(let i=0; i<res; i++) {
+                    this.angle += speed;
+                    
+                    let k = R - r;
+                    let x = width/2 + k * Math.cos(this.angle) + d * Math.cos((k / r) * this.angle);
+                    let y = height/2 + k * Math.sin(this.angle) - d * Math.sin((k / r) * this.angle);
+                    
+                    this.path.push({x, y, h: this.hue});
+                    this.hue = (this.hue + 0.5) % 360;
+
+                    // 限制路徑長度以防記憶體爆炸 (但要夠長以形成圖案)
+                    if(this.path.length > 5000) this.path.shift();
+                }
+            }
+
+            draw() {
+                // 我們不清除背景，創造繪圖效果
+                // 但為了動畫流暢，我們可以選擇重繪路徑
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(0, 0, width, height); // Clear screen
+
+                // 繪製中心輔助圓 (可選)
+                /*
+                ctx.strokeStyle = '#334155';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(width/2, height/2, parseFloat(this.params.outerR.val), 0, Math.PI*2);
+                ctx.stroke();
+                */
+
+                if(this.path.length < 2) return;
+
+                ctx.lineWidth = 2;
+                // 漸變繪製
+                // 為了性能，我們分段繪製或使用 Path2D
+                // 這裡簡單用 beginPath
+                
+                let prev = this.path[0];
+                for(let i=1; i<this.path.length; i++) {
+                    let p = this.path[i];
+                    ctx.beginPath();
+                    ctx.strokeStyle = `hsl(${p.h}, 80%, 60%)`;
+                    ctx.moveTo(prev.x, prev.y);
+                    ctx.lineTo(p.x, p.y);
+                    ctx.stroke();
+                    prev = p;
+                }
+            }
+            
+            reset() { this.init(); } // 重置會清空畫布
+            resize(w, h) { } // 不重置，保留畫作
+            getControls() { return this.params; }
+        }
+
+
+        // --- 主程式邏輯 ---
+        const labs = {
+            verlet: new VerletLab(),
+            reaction: new ReactionLab(),
+            raycasting: new RaycastLab(),
+            spiro: new SpiroLab()
+        };
+
+        function switchLab(labName) {
+            currentLab = labs[labName];
+            
+            // 更新 UI 狀態
+            document.querySelectorAll('.lab-btn').forEach(btn => {
+                btn.classList.remove('bg-slate-800', 'border-l-4');
+                // Remove specific border colors
+                btn.classList.remove('border-cyan-500', 'border-purple-500', 'border-yellow-500', 'border-pink-500');
+            });
+
+            const activeBtn = document.getElementById(`btn-${labName}`);
+            activeBtn.classList.add('bg-slate-800', 'border-l-4');
+            
+            // Add specific active border color
+            if(labName === 'verlet') activeBtn.classList.add('border-cyan-500');
+            if(labName === 'reaction') activeBtn.classList.add('border-purple-500');
+            if(labName === 'raycasting') activeBtn.classList.add('border-yellow-500');
+            if(labName === 'spiro') activeBtn.classList.add('border-pink-500');
+
+            // 生成控制項
+            generateControls(currentLab.getControls());
+            
+            // 重置與初始化
+            resize();
+            currentLab.init();
+        }
+
+        function generateControls(params) {
+            const container = document.getElementById('controls-grid');
+            container.innerHTML = '';
+            
+            Object.keys(params).forEach(key => {
+                const p = params[key];
+                const div = document.createElement('div');
+                div.className = "flex flex-col space-y-2";
+                
+                const labelRow = document.createElement('div');
+                labelRow.className = "flex justify-between text-xs font-mono text-slate-400";
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.innerText = p.name;
+                
+                const valSpan = document.createElement('span');
+                valSpan.id = `val-${key}`;
+                valSpan.className = "text-cyan-400 font-bold";
+                valSpan.innerText = p.val;
+                
+                labelRow.appendChild(nameSpan);
+                labelRow.appendChild(valSpan);
+                
+                const input = document.createElement('input');
+                input.type = "range";
+                input.min = p.min;
+                input.max = p.max;
+                input.step = p.step;
+                input.value = p.val;
+                input.className = "w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer";
+                
+                input.oninput = (e) => {
+                    p.val = e.target.value;
+                    document.getElementById(`val-${key}`).innerText = p.val;
+                    if(key === 'outerR' || key === 'innerR' || key === 'offsetD') {
+                        // Spirograph 特殊處理：參數變更時是否重置？
+                        // 這裡選擇不重置，讓它產生連續變化的圖案，更有趣
+                        // currentLab.init(); 
+                    }
+                };
+
+                div.appendChild(labelRow);
+                div.appendChild(input);
+                container.appendChild(div);
+            });
+        }
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            if(currentLab) {
+                currentLab.reset();
+                generateControls(currentLab.getControls()); // Update sliders back to default if needed (logic simplified here)
+            }
+        });
+
+        // Loop
+        function loop() {
+            if(currentLab) {
+                currentLab.update();
+                currentLab.draw();
+            }
+            animationId = requestAnimationFrame(loop);
+        }
+
+        // Start
+        resize();
+        switchLab('verlet'); // Default lab
+        loop();
+
+    </script>
+</body>
+</html>
