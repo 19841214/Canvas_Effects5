@@ -69,17 +69,54 @@
             background: #475569;
             border-radius: 2px;
         }
+
+        /* Start Screen Animation */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .animate-fade-in { animation: fadeIn 1s ease-out forwards; }
+        .animate-slide-up { animation: slideUp 0.8s ease-out 0.3s forwards; opacity: 0; }
     </style>
 </head>
-<body class="flex h-screen w-screen">
+<body class="flex h-screen w-screen relative">
 
-    <!-- 左側選單 Sidebar -->
-    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl z-10">
-        <div class="p-6 border-b border-slate-800">
-            <h1 class="text-2xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 neon-text">
+    <!-- Audio Assets -->
+    <audio id="bgm" loop src="https://cdn.pixabay.com/download/audio/2022/03/21/audio_0c4867c016.mp3?filename=future-chill_awareness-99187.mp3"></audio>
+    <audio id="sfx" src="https://cdn.pixabay.com/download/audio/2025/06/14/audio_3045825a0d.mp3?filename=sample_confirm_success02_kofi_by_miraclei-360154.mp3"></audio>
+
+    <!-- Start Overlay (To handle Autoplay Policy) -->
+    <div id="start-screen" class="absolute inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center p-4">
+        <div class="text-center max-w-lg">
+            <h1 class="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 neon-text tracking-widest mb-4 animate-fade-in">
                 VISUAL LABS
             </h1>
-            <p class="text-xs text-slate-500 mt-1 font-mono">EXPANSION PACK v2.0</p>
+            <p class="text-slate-400 font-mono text-sm tracking-[0.3em] mb-12 animate-fade-in">EXPANSION PACK v2.0</p>
+            
+            <button onclick="startExperience()" class="group relative px-8 py-4 bg-transparent overflow-hidden rounded-full border border-cyan-500/30 hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(34,211,238,0.3)] transition-all duration-300 animate-slide-up">
+                <div class="absolute inset-0 w-0 bg-cyan-500/10 transition-all duration-[250ms] ease-out group-hover:w-full"></div>
+                <span class="relative flex items-center space-x-3 text-cyan-400 font-bold tracking-widest text-lg">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <span>ENTER LAB</span>
+                </span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 左側選單 Sidebar -->
+    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl z-10 transition-opacity duration-1000 opacity-0" id="sidebar">
+        <div class="p-6 border-b border-slate-800 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 neon-text">
+                    LABS
+                </h1>
+                <p class="text-[10px] text-slate-500 mt-1 font-mono">AUDIO ENABLED</p>
+            </div>
+            <!-- Mute Button -->
+            <button onclick="toggleMute()" id="mute-btn" class="text-slate-500 hover:text-cyan-400 transition-colors p-2 rounded-full hover:bg-slate-800">
+                <!-- Volume Icon -->
+                <svg id="icon-vol-on" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                <!-- Mute Icon (Hidden by default) -->
+                <svg id="icon-vol-off" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg>
+            </button>
         </div>
 
         <nav class="flex-1 overflow-y-auto p-4 space-y-2">
@@ -138,7 +175,7 @@
     </aside>
 
     <!-- 主畫面 Main Area -->
-    <main class="flex-1 relative bg-black flex flex-col">
+    <main class="flex-1 relative bg-black flex flex-col transition-opacity duration-1000 opacity-0" id="main-content">
         <!-- Canvas Container -->
         <div id="canvas-container" class="flex-1 relative overflow-hidden flex justify-center items-center bg-slate-950">
             <canvas id="mainCanvas"></canvas>
@@ -171,6 +208,53 @@
     </main>
 
     <script>
+        // --- 音效系統 Audio System ---
+        const bgm = document.getElementById('bgm');
+        const sfx = document.getElementById('sfx');
+        let isMuted = false;
+
+        function startExperience() {
+            const startScreen = document.getElementById('start-screen');
+            const sidebar = document.getElementById('sidebar');
+            const main = document.getElementById('main-content');
+            
+            // Fade out start screen
+            startScreen.style.transition = "opacity 0.8s ease";
+            startScreen.style.opacity = "0";
+            
+            setTimeout(() => {
+                startScreen.style.display = "none";
+                // Fade in app
+                sidebar.classList.remove('opacity-0');
+                main.classList.remove('opacity-0');
+            }, 800);
+
+            // Play Audio
+            bgm.volume = 0.4; // Set reasonable volume
+            bgm.play().catch(e => console.log("Autoplay prevented:", e));
+            sfx.play().catch(() => {});
+            
+            // Start Loop if not already
+            if(!animationId) loop();
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            bgm.muted = isMuted;
+            sfx.muted = isMuted;
+
+            // Toggle Icons
+            document.getElementById('icon-vol-on').classList.toggle('hidden');
+            document.getElementById('icon-vol-off').classList.toggle('hidden');
+        }
+
+        function playClickSfx() {
+            if(!isMuted) {
+                sfx.currentTime = 0;
+                sfx.play().catch(() => {});
+            }
+        }
+
         // --- 核心系統 Core System ---
         const canvas = document.getElementById('mainCanvas');
         const ctx = canvas.getContext('2d', { alpha: false }); // 優化性能
@@ -762,6 +846,8 @@
         };
 
         function switchLab(labName) {
+            playClickSfx(); // Play SFX on switch
+            
             currentLab = labs[labName];
             
             // 更新 UI 狀態
@@ -836,6 +922,7 @@
         }
 
         document.getElementById('reset-btn').addEventListener('click', () => {
+            playClickSfx();
             if(currentLab) {
                 currentLab.reset();
                 generateControls(currentLab.getControls()); // Update sliders back to default if needed (logic simplified here)
@@ -851,10 +938,14 @@
             animationId = requestAnimationFrame(loop);
         }
 
-        // Start
+        // Initialize (Wait for user interaction to start)
         resize();
-        switchLab('verlet'); // Default lab
-        loop();
+        // Don't start loop yet, wait for user
+        
+        // Pre-select Default lab logic without starting logic
+        currentLab = labs['verlet'];
+        generateControls(currentLab.getControls());
+        currentLab.init();
 
     </script>
 </body>
